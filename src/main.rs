@@ -8,6 +8,7 @@ use self::utilities::*;
 use self::problems::p59;
 use self::problems::p60;
 use self::problems::p60_clean;
+use self::problems::p89;
 use self::problems::p200;
 use self::problems::p719;
 use self::problems::p808;
@@ -19,7 +20,7 @@ fn main() {
 
     let start_time = Instant::now();
 
-    p60_clean::run();
+    p89::run();
 
     let end_time = Instant::now();
     let elapsed_time = end_time - start_time;
