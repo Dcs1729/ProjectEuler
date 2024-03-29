@@ -65,10 +65,12 @@ pub fn run() {
     // a3.push_child(a5);
     // a3.push_child(a6);
     // a3.push_child(a7);
-    // a1.push_child(a2);
-    // a1.push_child(a3);
     // a4.push_child(a12);
     // a4.push_child(a13);
+    // a1.push_child(a2);
+    // a1.push_child(a3);
+    // a1.push_child(a4);
+
 
     // a1.display();
 
@@ -101,17 +103,25 @@ pub fn run() {
 
     // b1.display();
 
-    let t = t_tree(50);
+    // for i in 1..75 {
+    //     let t = t_tree(i, |x| x); // format!("{:b}", x));
+    //     println!("\nn={}:", i);
+    //     t.display();    
+    // }
 
-    t.display();
+    // t.display();
 
-    
+    // let x: Vec<u128> = binary_digits(52).collect();
+    // println!("{:?}", x);
+
+    let y = f(u128::pow(10, 17), u128::pow(9, 17));
+    println!("{:?}", y);
 }
 
 
 #[derive(Debug)]
 struct Node<T> where
-    T: Copy + fmt::Display + fmt::Debug + Eq
+    T: fmt::Display + fmt::Debug + Eq + Clone
 {
     value: T,
     parent: RefCell<Weak<Node<T>>>,
@@ -121,7 +131,7 @@ struct Node<T> where
 
 #[derive(PartialEq, Eq)]
 struct TreeNode<T> where
-    T: Copy + fmt::Display + fmt::Debug + Eq
+    T: fmt::Display + fmt::Debug + Eq + Clone
 {
     node: Rc<Node<T>>,
 }
@@ -134,7 +144,7 @@ struct TreeNode<T> where
 // }
 
 impl<T> Node<T> where
-    T: Copy + fmt::Display + fmt::Debug + Eq
+    T: fmt::Display + fmt::Debug + Eq + Clone
 {
     fn new(value: T) -> Self {    
         Self {
@@ -158,7 +168,7 @@ impl<T> Node<T> where
 }
 
 impl<T> TreeNode<T> where
-    T: Copy + fmt::Display + fmt::Debug + Eq
+    T: fmt::Display + fmt::Debug + Eq + Clone
 {
     fn new(value: T) -> Self {
         Self {
@@ -177,13 +187,13 @@ impl<T> TreeNode<T> where
     } 
 
     fn get_val(&self) -> T {
-        self.node.value
+        self.node.value.clone()
     }
 
     fn get_parent_val(&self) -> Option<T> {
         self.node.parent.borrow()
             .upgrade()
-            .map(|parent| parent.value)
+            .map(|parent| parent.value.clone())
     }
 
     fn get_parent(&self) -> Option<TreeNode<T>> {
@@ -195,7 +205,7 @@ impl<T> TreeNode<T> where
     fn get_children_vals(&self) -> Vec<T> {
         self.node.children.borrow()
         .iter()
-        .map(|child| child.value)
+        .map(|child| child.value.clone())
         .collect()
     }
 
@@ -539,7 +549,7 @@ impl<T> TreeNode<T> where
 // ok its doable... also lets make it a void function which prints ACTUALLY NO cos i cant do that recursively with 1 print statement... hmm... helper function? DFS grid!
 
 impl<T> fmt::Debug for TreeNode<T> where
-    T: Copy + fmt::Display + fmt::Debug + Eq
+    T: fmt::Display + fmt::Debug + Eq + Clone
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let node_children = self.get_children_vals();
@@ -554,7 +564,7 @@ impl<T> fmt::Debug for TreeNode<T> where
 
 impl<T> PartialEq for Node<T>
 where
-    T: Copy + fmt::Display + fmt::Debug + Eq
+    T: fmt::Display + fmt::Debug + Eq + Clone
 {
     fn eq(&self, other: &Self) -> bool {
         // Check if the values are equal
@@ -570,29 +580,37 @@ where
 
 impl<T> Eq for Node<T>
 where
-    T: Copy + fmt::Display + fmt::Debug + Eq
+    T: fmt::Display + fmt::Debug + Eq + Clone
 {
 }
 
-fn t_tree(n: usize) -> TreeNode<usize> { // could implement this as t_next iteratively, or with a trait? idk
+fn t_tree<T>(n: usize, f: fn(usize) -> T) -> TreeNode<T> where
+    T: fmt::Display + fmt::Debug + Eq + Clone
+{ // could implement this as t_next iteratively, or with a trait? idk
     match n {
         0 => panic!("0 is invalid input!"),
-        1 => TreeNode::new(1),
+        1 => TreeNode::new(f(n)),
         _ => {
-            let new_root = TreeNode::new(n);
-            let mut node = t_tree(n-1);
-            let mut path: Vec<TreeNode<usize>> = vec![];
+            let new_root = TreeNode::new(f(n));
+            let mut node = t_tree(n-1, f);
+            let mut path: Vec<TreeNode<T>> = vec![];
             loop {
                 path.push(node.copy());
 
-                let next = node
-                    .get_children()
-                    .into_iter()
-                    .max_by(|a, b| a.get_val().cmp(&b.get_val()));
+                // let next = node
+                //     .get_children()
+                //     .into_iter()
+                //     .max_by(|a, b| a.get_val().cmp(&b.get_val()));
 
-                match next {
-                    None => break,
-                    Some(child) => {node = child.copy()},
+                // match next {
+                //     None => break,
+                //     Some(child) => {node = child.copy()},
+                // }
+                
+                let children = node.get_children();
+                match children.len() {
+                    0 => break,
+                    _ => {node = children[0].copy()}
                 }
             }
 
@@ -612,3 +630,43 @@ fn t_tree(n: usize) -> TreeNode<usize> { // could implement this as t_next itera
     }
 }
 
+fn f(n: u128, k: u128) -> u128 {
+    // algorithm:
+
+    // to find the path from n to k, we first take their difference, and then express that number in binary.
+    // then from right to left, we take the ith child (counting from 0) where i is the number of intermediate 0s between the next 1
+    // e.g. for f(71, 19), n-k = 52, which is 110100 in binary. So we firstly take the 2nd child (100), then the 1st child (10) then the 0th child (1) and we go from 71 to 19
+
+    // furthermore, we can see that if the previous difference between the parent and current node was 2^k (it is always a power of 2),
+    // then each child of the current node have a difference of 2^(k+1), 2^(k+2) etc. while the child value remains positive
+
+    // from this information, we can calculate the values of all the nodes in our path from n to k
+
+    let mut pow = 1;
+    let mut total = n;
+    let mut current_val = n;
+    for digit in binary_digits(n-k) {
+        match digit {
+            0 => {},
+            _ => // 1 (hopefully)
+                {
+                    current_val -= pow;
+                    total += current_val;
+                },
+        }
+        pow *= 2;
+    }
+
+    total
+}
+
+fn binary_digits(mut n: u128) -> impl Iterator<Item = u128> { // "reverse" order (as wanted)
+    iter::successors(Some(n % 2), move |&_x| {
+        n /= 2;
+        if n == 0 {
+            None
+        } else {
+            Some(n % 2)
+        }
+    })
+}
