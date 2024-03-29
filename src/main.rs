@@ -14,6 +14,7 @@ use self::problems::p200;
 use self::problems::p719;
 use self::problems::p808;
 use self::problems::p816;
+use self::problems::p872;
 
 use std::time::{Instant, Duration};
 
@@ -21,7 +22,7 @@ fn main() {
 
     let start_time = Instant::now();
 
-    p62::run();
+    p872::run();
 
     let end_time = Instant::now();
     let elapsed_time = end_time - start_time;
